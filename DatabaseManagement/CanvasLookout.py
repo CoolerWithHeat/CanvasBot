@@ -32,7 +32,7 @@ def GetStudent(chat_id):
         requested_id = 000000 if chat_id == "all" else chat_id
         endpoint = f'GetStudents/{requested_id}/'
         request = requests.get(base_url+endpoint)
-        print(request, 'GetStudent Function')
+        print('Student Information Requested --> ', request.status_code,)
         if request.status_code == 200:
             return request.json()
         
@@ -187,14 +187,16 @@ def build_courses_message(student_name, courses):
     except:
         return "Could Not Find You Schedule, Sorry"
     
-async def CheckAssignmentsDates(message_id=000000, force_check=False):
-    courses = load_courses(message_id)
+async def CheckAssignmentsDates(message_id=000000, student_enrollments=None, student_identity=None, force_check=False):
+    courses = student_enrollments
     reminded = 0
     if courses:
         for each in courses:
             course_id = each.get('course_id')
             if courses:
-                request = requests.get(f'https://worldclassroom.webster.edu/api/v1/courses/{course_id}/assignments', headers=request_header, params=params)
+                "https://worldclassroom.webster.edu/api/v1/courses/"
+                request = requests.get(f'https://worldclassroom.webster.edu/api/v1/courses/{course_id}/assignments', headers=student_identity, params=params)
+                print(request.status_code)
                 if request.status_code == 200:
                     parsedData = request.json()
                     for eachData in parsedData:
@@ -208,7 +210,6 @@ async def CheckAssignmentsDates(message_id=000000, force_check=False):
                         hours = minutes_and_hours['hours']
                         minutes = minutes_and_hours['minutes']
                         needs_reminding = hours < 14 if not force_check else hours < 24
-                        print(hours < 24)
                         if due_info and not is_unlocked_assignment and not (int(hours) == 0 and int(minutes) == 0) and needs_reminding:
                             message = build_task_message(assignment_name, hours, minutes, course_name)
                             await SendMessage(message, message_id)
@@ -231,11 +232,15 @@ async def HandleResponse(client, message):
         previous_interaction = student_identity.get('previously_interacted') if student_identity else False
         student_name = f" {student_identity.get('student_name') or ''}" if isinstance(student_identity, dict) else None or ''
         if student_details:
-            if message.text.lower() == 'check':
-                reminded = await CheckAssignmentsDates(chat_id, True)
-                await app.send_message(chat_id, "There You Go!" if reminded else "No Assignment Closing in 24 Hours :)")
-            else:
-                await app.send_message(chat_id, f"Hi{student_name}! if you want me to check your assignments just message me CHECK")
+            try:
+                if message.text.lower() == 'check':
+                    request_header = {'Authorization': f'Bearer {student_details}'}
+                    reminded = await CheckAssignmentsDates(chat_id, student_identity.get('courses') or [], request_header, True)
+                    await app.send_message(chat_id, "There You Go!" if reminded else "No Assignment Closing in 24 Hours :)")
+                else:
+                    await app.send_message(chat_id, f"Hi{student_name}! if you want me to check your assignments just message me CHECK")
+            except:
+                await app.send_message(chat_id, f"Hi{student_name}! I cannot interpret media such as images or any other text.\nIf you want me to check your assignments just message me CHECK")
         else:
             if previous_interaction:
                 saved = False
@@ -260,7 +265,7 @@ async def HandleResponse(client, message):
                     await app.send_message(chat_id, "It does not look like a valid token, please provide me a valid token of your Canvas account")
                     await app.delete_messages(chat_id, loading_alert)
             else:
-                save_logs = store_user_data(chat_id, None, None)
+                store_user_data(chat_id, None, None)
                 await app.send_message(chat_id, "Welcome !\nI am Canvas Asistant, I will be keeping an eye on your Canvas account and let you know hours before course assignments close, please provide me your canvas token so that i will remind you of your assignments in case you forget them.")
         await app.delete_messages(chat_id, loading_alert)
 

@@ -93,23 +93,23 @@ def build_message(assignment_name, hours, minutes, course_name):
     return student_message 
 
 def CheckAssignmentsDates(course_id, chat_id, course_name='', request_header=None):
-        if course_id and request_header:
-            request = requests.get(f'https://worldclassroom.webster.edu/api/v1/courses/{course_id}/assignments', headers=request_header, params=params)
-            if request.status_code == 200:
-                parsedData = request.json()
-                for eachData in parsedData:
-                    assignment_name = eachData.get('name')
-                    due_info = eachData.get('due_at')
-                    lockedInfo = eachData.get('lock_info')
-                    is_unlocked_assignment = lockedInfo.get('can_view') if lockedInfo else False
-                    hours_left = float(CheckDate(due_info))
-                    minutes_and_hours = GetTextTime(hours_left)
-                    hours = minutes_and_hours['hours']
-                    minutes = minutes_and_hours['minutes']
-                    needs_reminding = hours < 16
-                    if due_info and not is_unlocked_assignment and not (int(hours) == 0 and int(minutes) == 0) and needs_reminding:
-                        message = build_message(assignment_name, hours, minutes, course_name)
-                        SendMessage(chat_id, message)
+    if course_id and request_header:
+        request = requests.get(f'https://worldclassroom.webster.edu/api/v1/courses/{course_id}/assignments', headers=request_header, params=params)
+        if request.status_code == 200:
+            parsedData = request.json()
+            for eachData in parsedData:
+                assignment_name = eachData.get('name')
+                due_info = eachData.get('due_at')
+                lockedInfo = eachData.get('lock_info')
+                is_unlocked_assignment = lockedInfo.get('can_view') if lockedInfo else False
+                hours_left = float(CheckDate(due_info))
+                minutes_and_hours = GetTextTime(hours_left)
+                hours = minutes_and_hours['hours']
+                minutes = minutes_and_hours['minutes']
+                needs_reminding = hours < 16
+                if due_info and not is_unlocked_assignment and not (int(hours) == 0 and int(minutes) == 0) and needs_reminding:
+                    message = build_message(assignment_name, hours, minutes, course_name)
+                    SendMessage(chat_id, message)
 
 def SendMessage(chat_id, text):
     if not app.is_connected:
@@ -146,7 +146,7 @@ while True:
     next_time = GetClosestDate(int(current_time))
     next_schedule_minutes = GetNextSchedule(int(current_time), next_time)
     print("running at hour ", current_time)
-    print("next schedule is ", next_schedule_minutes)
+    print("next schedule is after", next_schedule_minutes, "hours")
     next_schedule = next_schedule_minutes * 60
     try:
         print('Checking Student Schedules at time ', current_time)
