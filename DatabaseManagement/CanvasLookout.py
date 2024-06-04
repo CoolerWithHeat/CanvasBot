@@ -240,7 +240,7 @@ async def HandleResponse(client, message):
                 else:
                     await app.send_message(chat_id, f"Hi{student_name}! if you want me to check your assignments just message me CHECK")
             except:
-                await app.send_message(chat_id, f"Hi{student_name}! I cannot interpret media such as images or any other text.\nIf you want me to check your assignments just message me CHECK")
+                await app.send_message(chat_id, f"Hi{student_name}! I cannot interpret and understand media such as images or any other files, only the command CHECK.\n\nIf you want me to check your assignments just message me CHECK")
         else:
             if previous_interaction:
                 saved = False

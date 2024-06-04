@@ -112,8 +112,9 @@ def CheckAssignmentsDates(course_id, chat_id, course_name='', request_header=Non
                     SendMessage(chat_id, message)
 
 def SendMessage(chat_id, text):
-    if not app.is_connected:
-        app.start()
+    
+    if not app.is_connected: app.start()
+
     app.send_message(chat_id, text)
 
 schedule = [9, 17, 22]
