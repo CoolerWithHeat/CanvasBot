@@ -6,7 +6,7 @@ timezone = pytz.timezone('Asia/Tashkent')
 bot_token = "7028351172:AAFLInmyCgvpMiFfcGrHzTf1dUzFFEGKtTM"
 api_id = 28896453
 api_hash = "64bb30aabff78bdac993050515e3ba6a"
-base_url = 'http://localhost:8000/'
+base_url = 'http://localhost:8001/'
 app = TelegramServer(
     "WebsterBot",
     api_id=api_id, api_hash=api_hash,
@@ -217,7 +217,6 @@ async def CheckAssignmentsDates(message_id=000000, student_enrollments=None, stu
                             break
     return reminded
                 
-
 
 @app.on_message()
 async def HandleResponse(client, message):
