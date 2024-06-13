@@ -216,12 +216,56 @@ async def CheckAssignmentsDates(message_id=000000, student_enrollments=None, stu
                             reminded += 1
                             break
     return reminded
-                
+
+def isCommand(sent_message):
+    return sent_message[0] == '!'
+
+async def reload_student_courses(student_id, callback):
+    try:
+        endpoint = f'ReloadStudent/{student_id}/'
+        request = requests.post(base_url+endpoint)
+        print('Student Information Reload Requested --> ', request.status_code)
+        if request.status_code == 200:
+            await callback()
+            response = request.json()
+            if isinstance(response, list):
+                courses = '  '.join(str(f"    \n*{data.get('course_name')}*") for data in response)
+                header = f"<b>\nHere is Your Updated Schedule :)</b>\n"
+                final_message = f"{header}{courses}"
+                if courses: await SendMessage(final_message, student_id)
+            return None
+    except:
+        return None
+
+async def unsubscribe_student(student_id, callback):
+    try:
+        endpoint = f'DeleteStudent/{student_id}/'
+        request = requests.post(base_url+endpoint)
+        print('Unsubscription Requested --> ', request.status_code)
+        if request.status_code == 200: 
+            response = request.json()
+            await callback()
+            await SendMessage('You Have Been Successfully Unsubscribed From This Program !', student_id)
+    except:
+        return None
+
+async def show_commands(student_id, callback):
+    try:
+        available_commands = ['check >> checks for assignments deadline', '!reload >> reloads your schedule for up-to-date enrollments', '!unsubscribe >> deletes you from the bot completely']
+        commands = ''.join(str(f"\n{command}") for command in available_commands)
+        final_message = f"Here Are Commands To Interact With Me :)\n{commands}"
+        await callback()
+        await SendMessage(final_message, student_id)
+    except:
+        return None
+    
+async def SayCommandsNotFound(chat_id, student_name):
+    await app.send_message(chat_id, f"Hi{student_name}! if you want me to check your assignments just message me CHECK\n\nor if you want to know all commands to interact just message me the word Commands")
 
 @app.on_message()
 async def HandleResponse(client, message):
     chat_id = message.chat.id
-    message_id = message.id
+    message_id = message.id 
     loading_alert = await SendMessage("Give me a second please...", chat_id)
     sender = message.from_user.username
     bot_sent = str(sender) == "Webster_Canvas_Alerts_bot"
@@ -232,14 +276,28 @@ async def HandleResponse(client, message):
         student_name = f" {student_identity.get('student_name') or ''}" if isinstance(student_identity, dict) else None or ''
         if student_details:
             try:
-                if message.text.lower() == 'check':
-                    request_header = {'Authorization': f'Bearer {student_details}'}
-                    reminded = await CheckAssignmentsDates(chat_id, student_identity.get('courses') or [], request_header, True)
-                    await app.send_message(chat_id, "There You Go!" if reminded else "No Assignment Closing in 24 Hours :)")
+                incoming_message = message.text.lower()
+                async def remove_loading_alert(): await app.delete_messages(chat_id, loading_alert)
+                if isCommand(incoming_message):
+                    if incoming_message == '!reload': return await reload_student_courses(chat_id, remove_loading_alert)
+                    if incoming_message == '!unsubscribe': return await unsubscribe_student(chat_id, remove_loading_alert)
+                    if incoming_message == '!commands': return  await show_commands(chat_id, remove_loading_alert)
+                    else: await SayCommandsNotFound(chat_id, student_name)
+                    return True
                 else:
-                    await app.send_message(chat_id, f"Hi{student_name}! if you want me to check your assignments just message me CHECK")
+                    if incoming_message == 'commands': 
+                        return await show_commands(chat_id, remove_loading_alert)
+                    else:
+                        if incoming_message == 'check':
+                            request_header = {'Authorization': f'Bearer {student_details}'}
+                            reminded = await CheckAssignmentsDates(chat_id, student_identity.get('courses') or [], request_header, True)
+                            await remove_loading_alert()
+                            await app.send_message(chat_id, "There You Go!" if reminded else "No Assignment Closing in 24 Hours :)")
+                            return True
+                        else:
+                            await SayCommandsNotFound(chat_id, student_name)
             except:
-                await app.send_message(chat_id, f"Hi{student_name}! I cannot interpret and understand media such as images or any other files, only the command CHECK.\n\nIf you want me to check your assignments just message me CHECK")
+                await app.send_message(chat_id, f"Hi{student_name}! I cannot interpret and understand media such as images or any other files, only the command CHECK.\n\nIf you want me to check your assignments just message me the word Check\n\nor if you want to know all commands to interact just message me the word Commands")
         else:
             if previous_interaction:
                 saved = False

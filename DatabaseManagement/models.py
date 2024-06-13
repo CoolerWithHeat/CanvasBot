@@ -1,7 +1,5 @@
 from django.db import models
 
-from django.db import models
-
 class Course(models.Model):
     course_id = models.IntegerField()
     course_name = models.CharField(max_length=255)
