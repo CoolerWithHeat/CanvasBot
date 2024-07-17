@@ -3,8 +3,8 @@ from datetime import datetime
 from pyrogram import Client as TelegramServer
 
 timezone = pytz.timezone('Asia/Tashkent')
-bot_token = "7028351172:AAFLInmyCgvpMiFfcGrHzTf1dUzFFEGKtTM"
-api_id = 28896453
+bot_token = "" # should come from environment variable for security reasons
+api_id = 00000000
 api_hash = "64bb30aabff78bdac993050515e3ba6a"
 base_url = 'http://localhost:8001/'
 app = TelegramServer(
